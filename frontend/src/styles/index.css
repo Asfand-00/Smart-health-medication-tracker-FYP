@@ -1,0 +1,239 @@
+/* ============================================================
+   GLOBAL STYLES — index.css
+   ============================================================
+   This file loads Tailwind's base styles and adds custom
+   global CSS that Tailwind alone can't handle.
+
+   Tailwind's 3 layers:
+   @tailwind base      → normalizes browser defaults
+   @tailwind components → component-level classes
+   @tailwind utilities  → all the utility classes (flex, p-4, etc.)
+   ============================================================ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Custom Base Styles ──────────────────────────────────── */
+@layer base {
+  /* Apply Inter font globally */
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-slate-950 text-white antialiased;
+  }
+
+  /* Remove default focus outline and replace with custom */
+  *:focus {
+    outline: none;
+  }
+
+  *:focus-visible {
+    @apply ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-900;
+  }
+
+  /* Custom scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-900;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-600 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-500;
+  }
+}
+
+/* ── Reusable Component Classes (using @layer components) ── */
+@layer components {
+
+  /* Glassmorphism card effect */
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl;
+  }
+
+  /* Gradient text utility */
+  .gradient-text {
+    @apply bg-gradient-to-r from-blue-400 to-teal-400 bg-clip-text text-transparent;
+  }
+
+  /* Primary button */
+  .btn-primary {
+    @apply bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-teal-500
+           text-white font-semibold py-3 px-6 rounded-xl
+           transition-all duration-300 transform hover:scale-[1.02]
+           shadow-lg hover:shadow-blue-500/25 disabled:opacity-50
+           disabled:cursor-not-allowed disabled:transform-none;
+  }
+
+  /* Secondary / outline button */
+  .btn-secondary {
+    @apply border border-white/20 hover:border-white/40 text-white/80 hover:text-white
+           font-medium py-3 px-6 rounded-xl transition-all duration-200
+           hover:bg-white/5 disabled:opacity-50;
+  }
+
+  /* Form input field */
+  .input-field {
+    @apply w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3
+           text-white placeholder-white/30 text-sm
+           focus:border-blue-500 focus:bg-white/10
+           transition-all duration-200;
+  }
+
+  /* Form label */
+  .input-label {
+    @apply block text-sm font-medium text-white/70 mb-1.5;
+  }
+
+  /* Error message below input */
+  .input-error {
+    @apply text-red-400 text-xs mt-1 flex items-center gap-1;
+  }
+
+  /* Dashboard stat card */
+  .stat-card {
+    @apply glass-card p-6 hover:bg-white/10 transition-all duration-300
+           hover:scale-[1.02] cursor-default;
+  }
+
+  /* Sidebar nav link */
+  .nav-link {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-white/60
+           hover:text-white hover:bg-white/10 transition-all duration-200
+           font-medium text-sm;
+  }
+
+  .nav-link.active {
+    @apply text-white bg-blue-600/30 border border-blue-500/30;
+  }
+
+  /* Role badge */
+  .role-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+}
+
+/* ── Alzheimer-Friendly Accessibility Overrides ─────────────────────────── */
+
+/* High Contrast Mode */
+.accessibility-contrast {
+  --tw-bg-opacity: 1 !important;
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+.accessibility-contrast body {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+.accessibility-contrast .glass-card,
+.accessibility-contrast .bg-slate-900,
+.accessibility-contrast .bg-slate-950,
+.accessibility-contrast .bg-slate-950\/20,
+.accessibility-contrast .bg-slate-950\/40,
+.accessibility-contrast .bg-slate-900\/40,
+.accessibility-contrast .bg-slate-900\/50,
+.accessibility-contrast .bg-white\/5 {
+  background-color: #0d0d0d !important;
+  border-color: #ffffff !important;
+  border-width: 2px !important;
+  box-shadow: none !important;
+}
+
+.accessibility-contrast text,
+.accessibility-contrast span,
+.accessibility-contrast p,
+.accessibility-contrast h1,
+.accessibility-contrast h2,
+.accessibility-contrast h3,
+.accessibility-contrast h4,
+.accessibility-contrast div,
+.accessibility-contrast label,
+.accessibility-contrast input,
+.accessibility-contrast select,
+.accessibility-contrast textarea {
+  color: #ffffff !important;
+}
+
+/* Neon indicators for high visibility */
+.accessibility-contrast .text-blue-400,
+.accessibility-contrast .text-blue-500,
+.accessibility-contrast .text-teal-400,
+.accessibility-contrast .text-emerald-400 {
+  color: #00ffff !important; /* Cyan */
+}
+
+.accessibility-contrast .text-rose-400,
+.accessibility-contrast .text-rose-450,
+.accessibility-contrast .text-rose-455,
+.accessibility-contrast .text-red-400,
+.accessibility-contrast .text-orange-400,
+.accessibility-contrast .text-amber-400 {
+  color: #ffff00 !important; /* Yellow */
+}
+
+.accessibility-contrast .bg-blue-600,
+.accessibility-contrast .bg-rose-600,
+.accessibility-contrast .bg-emerald-600 {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border: 3px solid #ffff00 !important;
+  font-weight: 900 !important;
+}
+
+.accessibility-contrast button,
+.accessibility-contrast a.btn-primary,
+.accessibility-contrast a.btn-secondary {
+  border: 2px solid #ffffff !important;
+  background-image: none !important;
+}
+
+.accessibility-contrast button:hover,
+.accessibility-contrast a.btn-primary:hover {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+/* Scalable Text Sizes */
+.text-size-large {
+  font-size: 115% !important;
+}
+
+.text-size-large h1 { font-size: 2.5rem !important; }
+.text-size-large h2 { font-size: 2rem !important; }
+.text-size-large h3 { font-size: 1.5rem !important; }
+.text-size-large p, 
+.text-size-large span, 
+.text-size-large label, 
+.text-size-large input, 
+.text-size-large select, 
+.text-size-large button,
+.text-size-large a {
+  font-size: 1.1rem !important;
+}
+
+.text-size-extra-large {
+  font-size: 130% !important;
+}
+
+.text-size-extra-large h1 { font-size: 3rem !important; }
+.text-size-extra-large h2 { font-size: 2.5rem !important; }
+.text-size-extra-large h3 { font-size: 1.8rem !important; }
+.text-size-extra-large p, 
+.text-size-extra-large span, 
+.text-size-extra-large label, 
+.text-size-extra-large input, 
+.text-size-extra-large select, 
+.text-size-extra-large button,
+.text-size-extra-large a {
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+}
