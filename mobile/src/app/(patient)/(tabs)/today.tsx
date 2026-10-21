@@ -12,6 +12,7 @@ import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { errorMessage } from '../../../api/client';
 import { qk } from '../../../api/queryClient';
 import { smartReminderApi } from '../../../api/services';
+import { ReminderPreferencesCard } from '../../../components/ReminderPreferencesCard';
 import { AppText } from '../../../components/ui/AppText';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
@@ -105,12 +106,15 @@ export default function TodayScreen() {
         />
       }
       ListFooterComponent={
-        <Card>
-          <AppText variant="caption" tone="muted">
-            💡 <AppText variant="caption" weight="700">Caregiver notified:</AppText> every dose you take or skip is shared with your caregiver in
-            real time. If a dose goes unconfirmed for 30 minutes, escalation alerts trigger automatically.
-          </AppText>
-        </Card>
+        <View style={screenStyles.gap}>
+          <Card>
+            <AppText variant="caption" tone="muted">
+              💡 <AppText variant="caption" weight="700">Caregiver notified:</AppText> every dose you take or skip is shared with your caregiver in
+              real time. If a dose goes unconfirmed for 30 minutes, escalation alerts trigger automatically.
+            </AppText>
+          </Card>
+          <ReminderPreferencesCard />
+        </View>
       }
       renderItem={({ item }) => {
         const med = medOf(item);

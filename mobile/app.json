@@ -41,7 +41,22 @@
           "resizeMode": "contain",
           "backgroundColor": "#020617"
         }
-      ]
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#3b82f6",
+          "defaultChannel": "reminders"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "MedTracker needs access to your photos to attach prescription images.",
+          "cameraPermission": "MedTracker uses the camera to photograph prescriptions."
+        }
+      ],
+      "expo-document-picker"
     ],
     "experiments": {
       "typedRoutes": false

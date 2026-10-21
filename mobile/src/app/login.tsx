@@ -104,6 +104,11 @@ export default function LoginScreen() {
               error={errors.password}
             />
             <Button title={loading ? 'Signing in…' : 'Sign In'} onPress={submit} loading={loading} size="lg" fullWidth />
+            <Link href="/forgot-password" asChild>
+              <AppText tone="primary" weight="600" align="center" accessibilityRole="link" suppressHighlighting>
+                Forgot your password?
+              </AppText>
+            </Link>
             <View style={styles.footer}>
               <AppText tone="faint">Don't have an account? </AppText>
               <Link href="/register" asChild>

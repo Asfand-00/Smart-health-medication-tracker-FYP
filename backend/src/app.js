@@ -2,87 +2,88 @@
  * EXPRESS APP CONFIGURATION — app.js
  * =====================================
  * This file sets up the Express application:
- * - Loads middleware (cors, json parser, logger)
+ * - Security headers, CORS, rate limiting, maintenance gate
+ * - Body parsing and request logging
  * - Registers all API routes
+ * - Access-log auditing of every state-changing request
  * - Attaches the global error handler
  *
- * WHY separate app.js from server.js?
- * → app.js defines WHAT the app does (routes, middleware)
- * → server.js defines HOW the app runs (port, DB connection)
- * → This separation makes testing easier — you can import app.js
- *   in test files without actually starting the server.
+ * app.js defines WHAT the app does (routes, middleware);
+ * server.js defines HOW the app runs (port, DB connection, sockets).
  */
 
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
 
-// Import routes (we'll create these next)
+// Routes
 const authRoutes = require("./features/auth/auth.routes");
 const userRoutes = require("./features/user/user.routes");
 const patientRoutes = require("./features/patient/patient.routes");
 const medicationRoutes = require("./features/medication/medication.routes");
-const vitalsRoutes     = require("./features/vitals/vitals.routes");
-const caregiverRoutes  = require("./features/caregiver/caregiver.routes");
-const reminderRoutes   = require("./features/reminder/reminder.routes");
-const adherenceRoutes  = require("./features/adherence/adherence.routes");
+const vitalsRoutes = require("./features/vitals/vitals.routes");
+const caregiverRoutes = require("./features/caregiver/caregiver.routes");
+const reminderRoutes = require("./features/reminder/reminder.routes");
+const adherenceRoutes = require("./features/adherence/adherence.routes");
 const notificationRoutes = require("./features/notification/notification.routes");
 const smartReminderRoutes = require("./features/smart-reminder/smartReminder.routes");
 const caregiverDashboardRoutes = require("./features/caregiver/caregiverDashboard.routes");
 const reportsRoutes = require("./features/reports/reports.routes");
+const doctorRoutes = require("./features/doctor/doctor.routes");
+const prescriptionRoutes = require("./features/prescription/prescription.routes");
+const { plans: medicationPlanRoutes, templates: medicationTemplateRoutes } = require("./features/medication-plan/medicationPlan.routes");
+const aiRoutes = require("./features/ai/ai.routes");
+const auditRoutes = require("./features/audit/audit.routes");
+const adminRoutes = require("./features/admin/admin.routes");
 
-// Import global error handler middleware
+// Middleware
 const errorHandler = require("./middleware/errorHandler");
+const { securityHeaders, apiLimiter, maintenanceGate } = require("./middleware/security");
+const { optionalAuth } = require("./middleware/authMiddleware");
+const { requestLogger } = require("./features/audit/audit.service");
 
-// Create the Express application instance
 const app = express();
 
-// ── MIDDLEWARE SETUP ─────────────────────────────────────────────────────
+// Behind a reverse proxy (HTTPS termination) the real client IP is in X-Forwarded-For
+app.set("trust proxy", 1);
+
+// ── SECURITY & PARSING ─────────────────────────────────────────────────
+app.use(securityHeaders);
 
 /**
- * CORS (Cross-Origin Resource Sharing)
- * Allows our React frontend (running on port 5173) to talk to this
- * backend (running on port 5000). Without this, browsers block requests.
+ * CORS: the mobile app does not send an Origin header, so it is unaffected.
+ * Browsers (Expo web build, admin tools) are limited to CLIENT_URL(S).
  */
+const allowedOrigins = (process.env.CLIENT_URLS || process.env.CLIENT_URL || "http://localhost:5173,http://localhost:8081")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
-    credentials: true, // Allow cookies/auth headers
+    origin: (origin, cb) => {
+      if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== "production") return cb(null, true);
+      return cb(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-/**
- * express.json() — Body Parser
- * Parses incoming requests with JSON payloads.
- * Without this, req.body would be undefined.
- */
 app.use(express.json({ limit: "10mb" }));
-
-/**
- * express.urlencoded()
- * Parses URL-encoded form data (like HTML form submissions).
- */
 app.use(express.urlencoded({ extended: true }));
 
-/**
- * Morgan — HTTP Request Logger
- * Logs every request to the console in development.
- * e.g., "POST /api/auth/login 200 45ms"
- * Only enabled in development to avoid noise in production logs.
- */
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 
+app.use("/api", apiLimiter);
+app.use(optionalAuth);
+app.use(maintenanceGate);
+app.use(requestLogger);
+
 // ── ROUTES ──────────────────────────────────────────────────────────────
 
-/**
- * Health Check Route
- * Simple endpoint to verify the server is running.
- * Try: GET http://localhost:5000/api/health
- */
 app.get("/api/health", (req, res) => {
   res.status(200).json({
     success: true,
@@ -92,17 +93,11 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-/**
- * API Routes
- * All routes are prefixed with /api/
- * auth routes  → /api/auth/register, /api/auth/login
- * user routes  → /api/user/profile
- */
-app.use("/api/auth",      authRoutes);
-app.use("/api/user",      userRoutes);
-app.use("/api/patient",   patientRoutes);
-app.use("/api/medication",medicationRoutes);
-app.use("/api/vitals",    vitalsRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api/patient", patientRoutes);
+app.use("/api/medication", medicationRoutes);
+app.use("/api/vitals", vitalsRoutes);
 app.use("/api/caregiver", caregiverRoutes);
 app.use("/api/reminders", reminderRoutes);
 app.use("/api/adherence", adherenceRoutes);
@@ -110,11 +105,15 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/smart-reminders", smartReminderRoutes);
 app.use("/api/caregiver-dashboard", caregiverDashboardRoutes);
 app.use("/api/reports", reportsRoutes);
+app.use("/api/doctor", doctorRoutes);
+app.use("/api/prescriptions", prescriptionRoutes);
+app.use("/api/medication-plans", medicationPlanRoutes);
+app.use("/api/medication-templates", medicationTemplateRoutes);
+app.use("/api/ai", aiRoutes);
+app.use("/api/audit", auditRoutes);
+app.use("/api/admin", adminRoutes);
 
-/**
- * 404 Handler — Catch-all for unknown routes
- * This runs if no route above matched the request.
- */
+// 404 — catch-all for unknown routes
 app.use("*", (req, res) => {
   res.status(404).json({
     success: false,
@@ -122,8 +121,7 @@ app.use("*", (req, res) => {
   });
 });
 
-// ── GLOBAL ERROR HANDLER ─────────────────────────────────────────────────
-// MUST be registered LAST, after all other middleware and routes
+// Global error handler — MUST be registered last
 app.use(errorHandler);
 
 module.exports = app;
