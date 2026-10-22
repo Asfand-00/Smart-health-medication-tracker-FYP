@@ -1,0 +1,18 @@
+# ============================================
+# ACTUAL .env file (this file is git-ignored)
+# ============================================
+
+PORT=5000
+NODE_ENV=development
+MONGO_URI=mongodb+srv://asfandullah2000_db_user:o4mZRfwfPcQ14elo@cluster0.8fj13g5.mongodb.net/?appName=Cluster0
+JWT_SECRET=smht_super_secret_key_2024_change_in_prod
+JWT_EXPIRES_IN=7d
+CLIENT_URL=http://localhost:5173
+
+# ── EMAIL SMTP CONFIGURATION (For real emails) ─────────────────────────────
+# Fill these to send real email alerts. Defaults to Mock console log if empty.
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=asfandullah7@gmail.com
+EMAIL_PASS=waye rexg ivye ewvr
+EMAIL_FROM="Smart Medical Health Tracker <asfandullah7@gmail.com>"

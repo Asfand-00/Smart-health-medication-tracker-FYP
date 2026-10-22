@@ -94,3 +94,81 @@ exports.getMissedReminders = async (req, res, next) => {
     next(error);
   }
 };
+
+// ── Reminder time preferences ────────────────────────────────────────
+const NotificationSettings = require("../notification/notificationSettings.model");
+const Reminder = require("../reminder/reminder.model");
+
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+// GET /api/smart-reminders/preferences
+exports.getPreferences = async (req, res, next) => {
+  try {
+    const settings = await NotificationSettings.getOrCreate(req.user._id);
+    const effective = await smartReminderService.resolveSlotTimes(req.user._id);
+    res.status(200).json({ success: true, data: { reminderTimes: settings.reminderTimes, reminderLeadMinutes: settings.reminderLeadMinutes, voiceAlerts: settings.voiceAlerts, effective } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/** Re-time today's still-unacknowledged reminders after a preference change. */
+const rescheduleToday = async (userId) => {
+  const slotTimes = await smartReminderService.resolveSlotTimes(userId);
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+  const reminders = await Reminder.find({ patientUserId: userId, reminderType: "medication", isRead: false, scheduledTime: { $gte: start, $lte: end } });
+  for (const r of reminders) {
+    const slot = Object.keys(slotTimes).find((k) => r.title.toLowerCase().includes(k.toLowerCase()));
+    if (!slot) continue;
+    const t = new Date(start);
+    t.setHours(slotTimes[slot].hour, slotTimes[slot].minute, 0, 0);
+    if (t.getTime() !== new Date(r.scheduledTime).getTime()) {
+      r.scheduledTime = t;
+      await r.save();
+    }
+  }
+  return reminders.length;
+};
+
+// PUT /api/smart-reminders/preferences  { reminderTimes: {Morning:'08:30',...}, reminderLeadMinutes, voiceAlerts }
+exports.updatePreferences = async (req, res, next) => {
+  try {
+    const settings = await NotificationSettings.getOrCreate(req.user._id);
+    const { reminderTimes, reminderLeadMinutes, voiceAlerts } = req.body || {};
+    if (reminderTimes && typeof reminderTimes === "object") {
+      for (const slot of ["Morning", "Afternoon", "Evening", "Night"]) {
+        if (reminderTimes[slot] !== undefined) {
+          if (!TIME_RE.test(reminderTimes[slot])) return res.status(400).json({ success: false, message: `${slot} time must be HH:MM (24h).` });
+          settings.reminderTimes[slot] = reminderTimes[slot];
+        }
+      }
+    }
+    if (reminderLeadMinutes !== undefined) settings.reminderLeadMinutes = Math.max(0, Math.min(120, Number(reminderLeadMinutes) || 0));
+    if (voiceAlerts !== undefined) settings.voiceAlerts = Boolean(voiceAlerts);
+    await settings.save();
+    const rescheduled = await rescheduleToday(req.user._id);
+    res.status(200).json({ success: true, message: "Reminder preferences saved.", data: { reminderTimes: settings.reminderTimes, reminderLeadMinutes: settings.reminderLeadMinutes, voiceAlerts: settings.voiceAlerts, rescheduledToday: rescheduled } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// POST /api/smart-reminders/suggestions/apply  { timeOfDay, suggestedTime }
+exports.applySuggestion = async (req, res, next) => {
+  try {
+    const { timeOfDay, suggestedTime } = req.body || {};
+    if (!["Morning", "Afternoon", "Evening", "Night"].includes(timeOfDay) || !TIME_RE.test(suggestedTime || "")) {
+      return res.status(400).json({ success: false, message: "timeOfDay and suggestedTime (HH:MM) are required." });
+    }
+    const settings = await NotificationSettings.getOrCreate(req.user._id);
+    settings.reminderTimes[timeOfDay] = suggestedTime;
+    await settings.save();
+    const rescheduled = await rescheduleToday(req.user._id);
+    res.status(200).json({ success: true, message: `${timeOfDay} reminder moved to ${suggestedTime}.`, data: { reminderTimes: settings.reminderTimes, rescheduledToday: rescheduled } });
+  } catch (error) {
+    next(error);
+  }
+};

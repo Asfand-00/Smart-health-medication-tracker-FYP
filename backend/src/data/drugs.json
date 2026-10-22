@@ -1,0 +1,252 @@
+[
+  {
+    "name": "Donepezil",
+    "aliases": ["aricept"],
+    "class": "Cholinesterase inhibitor",
+    "uses": "Mild to moderate Alzheimer's disease; improves memory, attention and daily functioning.",
+    "sideEffects": ["Nausea", "Diarrhoea", "Insomnia", "Muscle cramps", "Slow heart rate"],
+    "warnings": "Take at bedtime. Report fainting, very slow pulse or stomach bleeding. Do not stop suddenly.",
+    "interactions": ["Memantine", "Rivastigmine", "Galantamine", "Anticholinergics"],
+    "foodAdvice": "With or without food."
+  },
+  {
+    "name": "Memantine",
+    "aliases": ["namenda", "ebixa"],
+    "class": "NMDA receptor antagonist",
+    "uses": "Moderate to severe Alzheimer's disease.",
+    "sideEffects": ["Dizziness", "Headache", "Confusion", "Constipation"],
+    "warnings": "Dose is increased gradually over weeks. Tell the doctor about kidney problems.",
+    "interactions": ["Amantadine", "Dextromethorphan", "Ketamine"],
+    "foodAdvice": "With or without food."
+  },
+  {
+    "name": "Rivastigmine",
+    "aliases": ["exelon"],
+    "class": "Cholinesterase inhibitor",
+    "uses": "Mild to moderate Alzheimer's and Parkinson's disease dementia.",
+    "sideEffects": ["Nausea", "Vomiting", "Loss of appetite", "Weight loss", "Skin irritation (patch)"],
+    "warnings": "Apply patch to clean, dry skin and rotate sites. Remove old patch before applying a new one.",
+    "interactions": ["Donepezil", "Galantamine", "Anticholinergics", "Beta-blockers"],
+    "foodAdvice": "Capsules with meals."
+  },
+  {
+    "name": "Galantamine",
+    "aliases": ["razadyne", "reminyl"],
+    "class": "Cholinesterase inhibitor",
+    "uses": "Mild to moderate Alzheimer's disease.",
+    "sideEffects": ["Nausea", "Vomiting", "Dizziness", "Weight loss"],
+    "warnings": "Take with food. Report severe skin reactions.",
+    "interactions": ["Donepezil", "Rivastigmine", "Ketoconazole", "Paroxetine"],
+    "foodAdvice": "With breakfast and dinner."
+  },
+  {
+    "name": "Metformin",
+    "aliases": ["glucophage"],
+    "class": "Biguanide (antidiabetic)",
+    "uses": "Type 2 diabetes blood sugar control.",
+    "sideEffects": ["Stomach upset", "Diarrhoea", "Metallic taste", "Vitamin B12 deficiency"],
+    "warnings": "Stop and seek help for unusual muscle pain, trouble breathing or severe tiredness (lactic acidosis). Tell the doctor before contrast scans.",
+    "interactions": ["Alcohol", "Contrast dye", "Furosemide"],
+    "foodAdvice": "With meals."
+  },
+  {
+    "name": "Amlodipine",
+    "aliases": ["norvasc"],
+    "class": "Calcium channel blocker",
+    "uses": "High blood pressure and angina.",
+    "sideEffects": ["Ankle swelling", "Flushing", "Headache", "Dizziness"],
+    "warnings": "Rise slowly from sitting to avoid dizziness.",
+    "interactions": ["Simvastatin", "Grapefruit juice", "Clarithromycin"],
+    "foodAdvice": "Avoid large amounts of grapefruit."
+  },
+  {
+    "name": "Losartan",
+    "aliases": ["cozaar"],
+    "class": "Angiotensin II receptor blocker",
+    "uses": "High blood pressure; kidney protection in diabetes.",
+    "sideEffects": ["Dizziness", "High potassium", "Tiredness"],
+    "warnings": "Not for use in pregnancy. Avoid potassium supplements unless advised.",
+    "interactions": ["Potassium supplements", "NSAIDs (ibuprofen)", "Lithium"],
+    "foodAdvice": "With or without food."
+  },
+  {
+    "name": "Aspirin",
+    "aliases": ["asa", "disprin"],
+    "class": "Antiplatelet / NSAID",
+    "uses": "Low dose: prevention of heart attack and stroke. Higher dose: pain and fever.",
+    "sideEffects": ["Stomach irritation", "Bleeding", "Bruising"],
+    "warnings": "Take after food. Report black stools or vomiting blood.",
+    "interactions": ["Warfarin", "Ibuprofen", "Clopidogrel", "Methotrexate"],
+    "foodAdvice": "After food with water."
+  },
+  {
+    "name": "Atorvastatin",
+    "aliases": ["lipitor"],
+    "class": "Statin",
+    "uses": "Lowers cholesterol; reduces heart attack and stroke risk.",
+    "sideEffects": ["Muscle aches", "Headache", "Digestive upset"],
+    "warnings": "Report unexplained muscle pain or dark urine.",
+    "interactions": ["Clarithromycin", "Grapefruit juice", "Cyclosporine", "Gemfibrozil"],
+    "foodAdvice": "Any time of day, usually evening."
+  },
+  {
+    "name": "Simvastatin",
+    "aliases": ["zocor"],
+    "class": "Statin",
+    "uses": "Lowers cholesterol.",
+    "sideEffects": ["Muscle aches", "Constipation", "Headache"],
+    "warnings": "Take at night. Report muscle pain or weakness.",
+    "interactions": ["Amlodipine", "Grapefruit juice", "Clarithromycin", "Amiodarone"],
+    "foodAdvice": "In the evening; avoid grapefruit."
+  },
+  {
+    "name": "Warfarin",
+    "aliases": ["coumadin"],
+    "class": "Anticoagulant",
+    "uses": "Prevents blood clots (atrial fibrillation, DVT, heart valves).",
+    "sideEffects": ["Bleeding", "Bruising"],
+    "warnings": "Regular INR blood tests are essential. Keep vitamin K intake (green vegetables) steady.",
+    "interactions": ["Aspirin", "Ibuprofen", "Antibiotics", "Amiodarone", "Alcohol"],
+    "foodAdvice": "Same time each day; consistent diet."
+  },
+  {
+    "name": "Clopidogrel",
+    "aliases": ["plavix"],
+    "class": "Antiplatelet",
+    "uses": "Prevents clots after heart attack, stroke or stent.",
+    "sideEffects": ["Bleeding", "Bruising", "Stomach upset"],
+    "warnings": "Do not stop without talking to the doctor, especially after a stent.",
+    "interactions": ["Omeprazole", "Aspirin", "Warfarin", "NSAIDs"],
+    "foodAdvice": "With or without food."
+  },
+  {
+    "name": "Omeprazole",
+    "aliases": ["prilosec", "losec"],
+    "class": "Proton pump inhibitor",
+    "uses": "Acid reflux, stomach ulcers, stomach protection.",
+    "sideEffects": ["Headache", "Nausea", "Low magnesium with long use"],
+    "warnings": "Long-term use may affect bone strength and B12 levels.",
+    "interactions": ["Clopidogrel", "Methotrexate", "Diazepam"],
+    "foodAdvice": "Before breakfast."
+  },
+  {
+    "name": "Levothyroxine",
+    "aliases": ["synthroid", "eltroxin"],
+    "class": "Thyroid hormone",
+    "uses": "Underactive thyroid.",
+    "sideEffects": ["Palpitations", "Weight loss", "Insomnia (if dose too high)"],
+    "warnings": "Take on an empty stomach, 30–60 minutes before breakfast, away from calcium and iron.",
+    "interactions": ["Calcium", "Iron", "Omeprazole", "Warfarin"],
+    "foodAdvice": "Empty stomach with water."
+  },
+  {
+    "name": "Furosemide",
+    "aliases": ["lasix"],
+    "class": "Loop diuretic",
+    "uses": "Fluid retention from heart failure, kidney or liver disease.",
+    "sideEffects": ["Frequent urination", "Dizziness", "Low potassium", "Dehydration"],
+    "warnings": "Take in the morning. Report muscle cramps or extreme thirst.",
+    "interactions": ["Digoxin", "Lithium", "NSAIDs", "Metformin"],
+    "foodAdvice": "Morning, with or without food."
+  },
+  {
+    "name": "Sertraline",
+    "aliases": ["zoloft"],
+    "class": "SSRI antidepressant",
+    "uses": "Depression and anxiety, common alongside dementia.",
+    "sideEffects": ["Nausea", "Sleep changes", "Sweating", "Low sodium in older adults"],
+    "warnings": "Takes 2–4 weeks to work. Do not stop suddenly.",
+    "interactions": ["Tramadol", "Warfarin", "Aspirin", "NSAIDs", "Other antidepressants"],
+    "foodAdvice": "With food, same time daily."
+  },
+  {
+    "name": "Quetiapine",
+    "aliases": ["seroquel"],
+    "class": "Antipsychotic",
+    "uses": "Severe agitation or psychosis; used cautiously in dementia.",
+    "sideEffects": ["Drowsiness", "Dizziness", "Weight gain", "Falls"],
+    "warnings": "Increased risk of stroke and death in elderly dementia patients — only under specialist supervision.",
+    "interactions": ["Alcohol", "Sedatives", "Ketoconazole", "Carbamazepine"],
+    "foodAdvice": "With or without food."
+  },
+  {
+    "name": "Paracetamol",
+    "aliases": ["acetaminophen", "panadol", "tylenol"],
+    "class": "Analgesic / antipyretic",
+    "uses": "Pain and fever.",
+    "sideEffects": ["Rare at normal doses"],
+    "warnings": "Never exceed 4g in 24 hours. Check other medicines for hidden paracetamol.",
+    "interactions": ["Warfarin (high doses)", "Alcohol"],
+    "foodAdvice": "With or without food."
+  },
+  {
+    "name": "Ibuprofen",
+    "aliases": ["brufen", "advil", "nurofen"],
+    "class": "NSAID",
+    "uses": "Pain, inflammation, fever.",
+    "sideEffects": ["Stomach pain", "Ulcers", "Kidney strain", "Raised blood pressure"],
+    "warnings": "Avoid in heart failure, kidney disease or with blood thinners unless advised.",
+    "interactions": ["Aspirin", "Warfarin", "Losartan", "Furosemide", "Sertraline", "Lithium"],
+    "foodAdvice": "With food."
+  },
+  {
+    "name": "Vitamin D3",
+    "aliases": ["cholecalciferol", "vitamin d"],
+    "class": "Vitamin supplement",
+    "uses": "Bone health, deficiency prevention.",
+    "sideEffects": ["Rare; high doses can raise calcium"],
+    "warnings": "Do not exceed the prescribed dose.",
+    "interactions": ["Thiazide diuretics", "Digoxin (high calcium)"],
+    "foodAdvice": "With a meal containing fat."
+  },
+  {
+    "name": "Vitamin B12",
+    "aliases": ["cyanocobalamin", "methylcobalamin"],
+    "class": "Vitamin supplement",
+    "uses": "B12 deficiency, nerve and blood health; often low on metformin.",
+    "sideEffects": ["Rare"],
+    "warnings": "None significant.",
+    "interactions": ["Metformin (reduces absorption)", "Omeprazole"],
+    "foodAdvice": "Any time."
+  },
+  {
+    "name": "Digoxin",
+    "aliases": ["lanoxin"],
+    "class": "Cardiac glycoside",
+    "uses": "Heart failure and atrial fibrillation.",
+    "sideEffects": ["Nausea", "Visual disturbance", "Slow pulse", "Confusion"],
+    "warnings": "Narrow safety margin — never double a missed dose. Report nausea or yellow vision.",
+    "interactions": ["Furosemide", "Amiodarone", "Verapamil", "Vitamin D3"],
+    "foodAdvice": "Same time each day."
+  },
+  {
+    "name": "Insulin",
+    "aliases": ["insulin glargine", "lantus", "novorapid", "humulin"],
+    "class": "Hormone (antidiabetic)",
+    "uses": "Blood sugar control in diabetes.",
+    "sideEffects": ["Low blood sugar", "Weight gain", "Injection site reactions"],
+    "warnings": "Always keep a sugar source nearby. Rotate injection sites.",
+    "interactions": ["Beta-blockers (mask low sugar)", "Alcohol", "Steroids"],
+    "foodAdvice": "Timing depends on the insulin type — follow the plan exactly."
+  },
+  {
+    "name": "Lorazepam",
+    "aliases": ["ativan"],
+    "class": "Benzodiazepine",
+    "uses": "Short-term anxiety or agitation.",
+    "sideEffects": ["Drowsiness", "Confusion", "Falls", "Dependence"],
+    "warnings": "High fall and confusion risk in older adults; short courses only.",
+    "interactions": ["Alcohol", "Opioids", "Quetiapine", "Sedatives"],
+    "foodAdvice": "With or without food."
+  },
+  {
+    "name": "Melatonin",
+    "aliases": ["circadin"],
+    "class": "Sleep aid",
+    "uses": "Sleep disturbance, common in dementia.",
+    "sideEffects": ["Drowsiness", "Headache"],
+    "warnings": "Take 1–2 hours before bedtime.",
+    "interactions": ["Warfarin", "Sedatives", "Fluvoxamine"],
+    "foodAdvice": "After food in the evening."
+  }
+]

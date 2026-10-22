@@ -57,8 +57,16 @@ const medicationSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    // Provenance
+    prescriptionId: { type: mongoose.Schema.Types.ObjectId, ref: "Prescription", default: null },
+    templateId: { type: mongoose.Schema.Types.ObjectId, ref: "MedicationTemplate", default: null },
+    addedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    addedByRole: { type: String, enum: ["patient", "caregiver", "doctor", "admin", null], default: null },
+    addedByCaregiver: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
   },
   { timestamps: true }
 );
+
+medicationSchema.index({ userId: 1, createdAt: -1 });
 
 module.exports = mongoose.model("Medication", medicationSchema);

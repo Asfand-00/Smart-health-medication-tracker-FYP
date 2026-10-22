@@ -301,3 +301,74 @@ exports.getMedicationStats = async (req, res, next) => {
     next(error);
   }
 };
+
+// ── CALENDAR & DRUG INFORMATION ──────────────────────────────────────────
+
+const { assertPatientAccess } = require("../../utils/access");
+const calendarService = require("./medicationCalendar.service");
+const drugInfo = require("./drugInfo.service");
+
+const resolvePatientId = async (req) => {
+  const patientUserId = req.user.role === "patient" ? req.user._id : req.query.patientId;
+  if (!patientUserId) throw { status: 400, message: "patientId is required." };
+  await assertPatientAccess(req.user, patientUserId);
+  return patientUserId;
+};
+
+const handleErr = (res, next, error) => {
+  if (error.status) return res.status(error.status).json({ success: false, message: error.message });
+  next(error);
+};
+
+// @desc    Month calendar of scheduled vs taken doses
+// @route   GET /api/medication/calendar?month=YYYY-MM[&patientId=]
+exports.getCalendar = async (req, res, next) => {
+  try {
+    const patientUserId = await resolvePatientId(req);
+    const data = await calendarService.getMonthCalendar(patientUserId, req.query.month);
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    handleErr(res, next, error);
+  }
+};
+
+// @desc    Search the drug reference
+// @route   GET /api/medication/drug-info?q=
+exports.searchDrugInfo = async (req, res, next) => {
+  try {
+    res.status(200).json({ success: true, data: drugInfo.searchDrugs(req.query.q) });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Full information for one medicine
+// @route   GET /api/medication/drug-info/:name
+exports.getDrugInfo = async (req, res, next) => {
+  try {
+    const drug = drugInfo.findDrug(req.params.name);
+    if (!drug) return res.status(404).json({ success: false, message: `No reference information for "${req.params.name}". Ask your pharmacist or doctor.` });
+    res.status(200).json({ success: true, data: drug });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Interaction check across the patient's active medications (or ?names=a,b,c)
+// @route   GET /api/medication/interactions[?patientId=][&names=]
+exports.getInteractions = async (req, res, next) => {
+  try {
+    let names = [];
+    if (req.query.names) {
+      names = String(req.query.names).split(",").map((s) => s.trim()).filter(Boolean);
+    } else {
+      const patientUserId = await resolvePatientId(req);
+      const today = new Date();
+      const meds = await Medication.find({ userId: patientUserId, $or: [{ endDate: null }, { endDate: { $gte: today } }] }).select("medicineName");
+      names = meds.map((m) => m.medicineName);
+    }
+    res.status(200).json({ success: true, data: drugInfo.checkInteractions(names) });
+  } catch (error) {
+    handleErr(res, next, error);
+  }
+};

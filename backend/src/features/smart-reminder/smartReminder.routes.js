@@ -21,7 +21,12 @@ router.get("/history", roleMiddleware.authorize("patient"), smartReminderControl
 router.get("/suggestions", roleMiddleware.authorize("patient"), smartReminderController.getSuggestions);
 router.get("/missed", roleMiddleware.authorize("patient", "caregiver"), smartReminderController.getMissedReminders);
 
-// Escalation trigger (callable by system or manually for testing)
-router.post("/escalate/:id", smartReminderController.escalateReminder);
+// Reminder time preferences (adaptive timing applies here)
+router.get("/preferences", roleMiddleware.authorize("patient"), smartReminderController.getPreferences);
+router.put("/preferences", roleMiddleware.authorize("patient"), smartReminderController.updatePreferences);
+router.post("/suggestions/apply", roleMiddleware.authorize("patient"), smartReminderController.applySuggestion);
+
+// Escalation trigger (admin / system only)
+router.post("/escalate/:id", roleMiddleware.authorize("admin"), smartReminderController.escalateReminder);
 
 module.exports = router;

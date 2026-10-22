@@ -28,6 +28,13 @@ const verifyCaregiverAssignment = async (caregiverId, patientUserId) => {
   return patientProfile;
 };
 
+// Helper: read access for caregivers (assigned), doctors (linked), patients (self) and admins
+const { assertPatientAccess } = require("../../utils/access");
+const verifyReadAccess = async (req, patientUserId) => {
+  if (req.user.role === "caregiver") return verifyCaregiverAssignment(req.user._id, patientUserId);
+  return assertPatientAccess(req.user, patientUserId);
+};
+
 // GET /api/caregiver-dashboard/overview — Full dashboard summary of all patients
 exports.getOverview = async (req, res, next) => {
   try {
@@ -103,8 +110,7 @@ exports.getOverview = async (req, res, next) => {
 exports.getPatientTimeline = async (req, res, next) => {
   try {
     const patientUserId = req.params.id;
-    const caregiverId = req.user._id;
-    await verifyCaregiverAssignment(caregiverId, patientUserId);
+    await verifyReadAccess(req, patientUserId);
 
     // Fetch past 14 days of events
     const startDate = new Date();
@@ -215,8 +221,7 @@ exports.getPatientTimeline = async (req, res, next) => {
 exports.getPatientAdherence = async (req, res, next) => {
   try {
     const patientUserId = req.params.id;
-    const caregiverId = req.user._id;
-    await verifyCaregiverAssignment(caregiverId, patientUserId);
+    await verifyReadAccess(req, patientUserId);
 
     const todayStatus = await adherenceService.getTodayStatus(patientUserId);
     const weeklyReport = await adherenceService.getWeeklyReport(patientUserId);
@@ -343,6 +348,8 @@ exports.logCognitiveAssessment = async (req, res, next) => {
 
     if (role === "caregiver") {
       await verifyCaregiverAssignment(assessorId, patientUserId);
+    } else {
+      await assertPatientAccess(req.user, patientUserId);
     }
 
     // Find previous assessment to track decline
@@ -421,10 +428,7 @@ exports.logCognitiveAssessment = async (req, res, next) => {
 exports.getCognitiveAssessments = async (req, res, next) => {
   try {
     const patientUserId = req.params.patientId;
-    const caregiverId = req.user._id;
-    if (req.user.role === "caregiver") {
-      await verifyCaregiverAssignment(caregiverId, patientUserId);
-    }
+    await verifyReadAccess(req, patientUserId);
 
     const assessments = await CognitiveAssessment.find({ patientUserId })
       .populate("assessedBy", "firstName lastName role")
@@ -510,8 +514,7 @@ exports.logBehavioralObservation = async (req, res, next) => {
 exports.getBehavioralObservations = async (req, res, next) => {
   try {
     const patientUserId = req.params.patientId;
-    const caregiverId = req.user._id;
-    await verifyCaregiverAssignment(caregiverId, patientUserId);
+    await verifyReadAccess(req, patientUserId);
 
     const observations = await BehavioralObservation.find({ patientUserId })
       .populate("observedBy", "firstName lastName")
@@ -625,12 +628,7 @@ exports.logMood = async (req, res, next) => {
 exports.getMoodHistory = async (req, res, next) => {
   try {
     const patientUserId = req.params.patientId;
-    const caregiverId = req.user._id;
-    if (req.user.role === "caregiver") {
-      await verifyCaregiverAssignment(caregiverId, patientUserId);
-    } else if (req.user.role === "patient" && patientUserId.toString() !== caregiverId.toString()) {
-      return res.status(403).json({ success: false, message: "Unauthorized." });
-    }
+    await verifyReadAccess(req, patientUserId);
 
     const history = await MoodTracking.find({ patientUserId })
       .populate("loggedByUserId", "firstName lastName")
