@@ -6,12 +6,16 @@
  *
  * HOW JWT AUTHENTICATION WORKS:
  * 1. User logs in → server sends them a JWT token
- * 2. Client stores the token (localStorage or cookie)
+ * 2. Client stores the token (SecureStore on the phone)
  * 3. On every protected request, client sends:
  *    Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
  * 4. This middleware reads that header, verifies the token,
  *    fetches the user from DB, and attaches them to req.user
  * 5. The controller then has access to req.user
+ *
+ * Session handling: the token carries `tv` (tokenVersion). When the user
+ * changes/resets their password or signs out everywhere, the version is
+ * bumped and every older token is rejected with 401.
  *
  * If the token is missing or invalid → 401 Unauthorized error
  */
@@ -19,73 +23,73 @@
 const jwt = require("jsonwebtoken");
 const User = require("../features/user/user.model");
 
+const unauthorized = (message) => {
+  const error = new Error(message);
+  error.statusCode = 401;
+  return error;
+};
+
+const extractToken = (req) => {
+  if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+    return req.headers.authorization.split(" ")[1];
+  }
+  // File downloads opened by the OS viewer cannot set headers → allow ?token=
+  if (req.query && typeof req.query.token === "string" && req.query.token.length > 20) {
+    return req.query.token;
+  }
+  return null;
+};
+
 // ── PROTECT MIDDLEWARE ────────────────────────────────────────────────────
-/**
- * protect — verifies JWT and attaches user to request
- * Use this on any route that requires login.
- *
- * USAGE in routes: router.get("/profile", protect, controller)
- */
 const protect = async (req, res, next) => {
   try {
-    let token;
+    const token = extractToken(req);
+    if (!token) return next(unauthorized("Access denied. Please log in to continue."));
 
-    // Step 1: Extract token from Authorization header
-    // Header format: "Authorization: Bearer <token>"
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer ")
-    ) {
-      // Split "Bearer eyJhbG..." → take the second part (the token)
-      token = req.headers.authorization.split(" ")[1];
-    }
-
-    // If no token found, reject the request
-    if (!token) {
-      const error = new Error(
-        "Access denied. Please log in to continue."
-      );
-      error.statusCode = 401;
-      return next(error);
-    }
-
-    // Step 2: Verify the token using our secret key
-    // jwt.verify() decodes and validates the token signature
-    // Returns the payload we stored: { userId, role, iat, exp }
+    // Verify the token using our secret key → { userId, role, tv, iat, exp }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Step 3: Fetch the user from database using the ID from token
-    // We do this to ensure the user still exists and is still active
     const user = await User.findById(decoded.userId);
+    if (!user) return next(unauthorized("The user associated with this token no longer exists."));
 
-    if (!user) {
-      const error = new Error(
-        "The user associated with this token no longer exists."
-      );
-      error.statusCode = 401;
-      return next(error);
+    if (!user.isActive || user.deletedAt) {
+      return next(unauthorized("Your account has been deactivated. Please contact support."));
     }
 
-    // Check if account is still active
-    if (!user.isActive) {
-      const error = new Error(
-        "Your account has been deactivated. Please contact support."
-      );
-      error.statusCode = 401;
-      return next(error);
+    // Reject tokens issued before the last password change / global sign-out
+    if ((decoded.tv ?? 0) !== (user.tokenVersion ?? 0)) {
+      return next(unauthorized("Your session is no longer valid. Please log in again."));
     }
 
-    // Step 4: Attach user to request object
-    // Now req.user is available in all downstream controllers
     req.user = user.getPublicProfile();
-    req.user._id = user._id; // Ensure _id is available for backward compatibility with controllers expecting it
+    req.user._id = user._id; // keep ObjectId for controllers expecting it
+    req.token = decoded;
 
-    // Step 5: Continue to the next middleware/controller
     next();
   } catch (error) {
-    // This catches jwt.verify() errors (invalid/expired tokens)
-    next(error); // Goes to errorHandler.js which handles JWT-specific errors
+    // jwt.verify() errors (invalid/expired tokens) go to errorHandler.js
+    next(error);
   }
 };
 
-module.exports = { protect };
+/**
+ * optionalAuth — populates req.user when a valid token is present but does
+ * not reject the request otherwise (used by the maintenance gate).
+ */
+const optionalAuth = async (req, res, next) => {
+  try {
+    const token = extractToken(req);
+    if (!token) return next();
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId);
+    if (user && user.isActive && (decoded.tv ?? 0) === (user.tokenVersion ?? 0)) {
+      req.user = user.getPublicProfile();
+      req.user._id = user._id;
+    }
+  } catch {
+    // ignore — the route's own `protect` will reject if needed
+  }
+  next();
+};
+
+module.exports = { protect, optionalAuth };

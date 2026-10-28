@@ -17,21 +17,10 @@ const getPatientId = async (userId) => {
   return patient._id;
 };
 
-// Helper: verify caregiver/doctor access to patient
+// Helper: verify caregiver/doctor access to patient (shared rules in utils/access.js)
+const { assertPatientAccess } = require("../../utils/access");
 const verifyAccess = async (requesterId, requesterRole, patientUserId) => {
-  if (requesterRole === "patient") {
-    if (requesterId.toString() !== patientUserId.toString()) {
-      throw { status: 403, message: "You can only view your own data." };
-    }
-    return;
-  }
-  if (requesterRole === "caregiver") {
-    const patient = await Patient.findOne({ userId: patientUserId, assignedCaregivers: requesterId });
-    if (!patient) throw { status: 403, message: "Not authorized to view this patient." };
-    return;
-  }
-  if (requesterRole === "doctor" || requesterRole === "admin") return;
-  throw { status: 403, message: "Access denied." };
+  await assertPatientAccess({ _id: requesterId, role: requesterRole }, patientUserId);
 };
 
 // POST /api/adherence/confirm — One-tap dose confirmation (by patient or caregiver)

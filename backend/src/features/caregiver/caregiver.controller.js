@@ -182,7 +182,8 @@ exports.getPatientRecords = async (req, res, next) => {
     }
 
     const vitals = await Vitals.find({ patientId: patientUserId }).sort({ recordedAt: -1 });
-    const medications = await Medication.find({ patientId: patientUserId }).sort({ createdAt: -1 });
+    // Medication.userId holds the patient's *user* id (patientId is the Patient doc id)
+    const medications = await Medication.find({ userId: patientUserId }).sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,

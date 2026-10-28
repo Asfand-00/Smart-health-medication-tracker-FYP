@@ -1,13 +1,16 @@
 /**
  * SERVER ENTRY POINT — server.js
  * ================================
- * Now upgraded with Socket.io for real-time features:
- * - Real-time reminders from caregiver → patient
- * - Missed medication alerts caregiver → caregiver
- * - "Poke" patient from caregiver in real-time
+ * - HTTP server + Socket.io for real-time features
+ * - Background scheduler (reminders, escalation, AI alerts, daily jobs)
+ * - Seeds global medication templates and the platform configuration
  */
 
-require("dotenv").config();
+const path = require("path");
+require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
+if (!process.env.MONGO_URI) {
+  require("dotenv").config({ path: path.resolve(__dirname, "../env") });
+}
 
 const http = require("http");
 const { Server } = require("socket.io");
@@ -16,52 +19,46 @@ const connectDB = require("./config/db");
 
 const PORT = process.env.PORT || 5000;
 
-// Create HTTP server from Express app
 const httpServer = http.createServer(app);
 
-// Attach Socket.io to the HTTP server
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: process.env.NODE_ENV === "production" ? (process.env.CLIENT_URLS || process.env.CLIENT_URL || "").split(",").map((s) => s.trim()) : true,
     methods: ["GET", "POST"],
     credentials: true,
   },
 });
 
 /**
- * SOCKET.IO Connection Handler
- * 
- * Each user joins their own "room" using their userId.
- * This allows us to send targeted messages to specific users.
- * 
- * Example: When caregiver sends reminder to patient with userId "abc123",
- * we emit to room "abc123" and only that patient receives it.
+ * Each user joins their own "room" named by their userId so controllers can
+ * emit to exactly one person: io.to(userId).emit(...)
  */
 io.on("connection", (socket) => {
-  console.log(`🔌 Socket connected: ${socket.id}`);
-
-  // User joins their personal room based on their userId
   socket.on("join", (userId) => {
-    socket.join(userId);
-    console.log(`👤 User ${userId} joined their room`);
+    if (typeof userId === "string" && userId.length <= 64) {
+      socket.join(userId);
+      socket.data.userId = userId;
+    }
   });
 
-  socket.on("disconnect", () => {
-    console.log(`🔌 Socket disconnected: ${socket.id}`);
-  });
+  socket.on("disconnect", () => {});
 });
 
-// Make io accessible everywhere via app.locals
-// This allows controllers to emit events: req.app.locals.io.to(userId).emit(...)
 app.locals.io = io;
 
-// Start smart reminder background scheduler
 const reminderScheduler = require("./features/smart-reminder/reminderScheduler");
-reminderScheduler.initScheduler(io);
 
 const startServer = async () => {
   try {
     await connectDB();
+
+    // Seed platform configuration + global templates on first run
+    const SystemConfig = require("./features/admin/systemConfig.model");
+    await SystemConfig.getConfig(true);
+    const { seedTemplates } = require("./features/medication-plan/medicationPlan.controller");
+    await seedTemplates();
+
+    reminderScheduler.initScheduler(io);
 
     httpServer.listen(PORT, () => {
       console.log("═══════════════════════════════════════════");

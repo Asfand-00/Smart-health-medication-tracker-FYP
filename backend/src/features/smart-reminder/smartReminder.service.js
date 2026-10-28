@@ -21,12 +21,36 @@ const User = require("../user/user.model");
 const MedicationHistory = require("../medication/medicationHistory.model");
 const notificationService = require("../notification/notification.service");
 
-// Mapping times of day to target hours
+// Default mapping of times of day to target hours (platform config and the
+// user's own notification settings can override these — see resolveSlotTimes)
 const TIME_MAPPING = {
   Morning: 8,
   Afternoon: 13,
   Evening: 18,
   Night: 21
+};
+
+const NotificationSettings = require("../notification/notificationSettings.model");
+const SystemConfig = require("../admin/systemConfig.model");
+
+const parseClock = (value, fallbackHour) => {
+  const m = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec(String(value || ""));
+  return m ? { hour: Number(m[1]), minute: Number(m[2]) } : { hour: fallbackHour, minute: 0 };
+};
+
+/**
+ * Clock time for each slot for a given patient: user setting → platform
+ * config → built-in default. Returns { Morning: {hour, minute}, ... }.
+ */
+const resolveSlotTimes = async (userId) => {
+  const [settings, config] = await Promise.all([NotificationSettings.findOne({ userId }), SystemConfig.getConfig()]);
+  const out = {};
+  for (const slot of Object.keys(TIME_MAPPING)) {
+    const fromUser = settings?.reminderTimes?.[slot];
+    const fromConfig = config?.reminderTimes?.[slot];
+    out[slot] = parseClock(fromUser || fromConfig, TIME_MAPPING[slot]);
+  }
+  return out;
 };
 
 /**
@@ -51,12 +75,13 @@ const generateReminders = async (userId) => {
   }
 
   const generated = [];
+  const slotTimes = await resolveSlotTimes(userId);
 
   for (const med of medications) {
     for (const timeName of med.timeOfDay) {
-      const targetHour = TIME_MAPPING[timeName] || 8;
+      const target = slotTimes[timeName] || { hour: TIME_MAPPING[timeName] || 8, minute: 0 };
       const scheduledTime = new Date(now);
-      scheduledTime.setHours(targetHour, 0, 0, 0);
+      scheduledTime.setHours(target.hour, target.minute, 0, 0);
 
       // Check if reminder already exists for today at this timeOfDay for this medication
       const existing = await Reminder.findOne({
@@ -343,6 +368,7 @@ const getAdaptiveSuggestions = async (userId) => {
     return { suggestions: [], message: "Not enough historical data to generate suggestions yet." };
   }
 
+  const slotTimes = await resolveSlotTimes(userId);
   const times = { Morning: [], Afternoon: [], Evening: [], Night: [] };
   historyLogs.forEach(log => {
     if (log.timeOfDay && times[log.timeOfDay]) {
@@ -357,13 +383,14 @@ const getAdaptiveSuggestions = async (userId) => {
     if (delays.length >= 3) {
       const avgDelay = delays.reduce((a, b) => a + b, 0) / delays.length;
       if (avgDelay >= 30) {
-        const currentTargetHour = TIME_MAPPING[timeName];
-        const newHour = currentTargetHour + Math.round(avgDelay / 60);
+        const current = slotTimes[timeName] || { hour: TIME_MAPPING[timeName], minute: 0 };
+        const totalMinutes = Math.min(23 * 60 + 30, current.hour * 60 + current.minute + Math.round(avgDelay / 15) * 15);
+        const pad = (n) => String(n).padStart(2, "0");
         suggestions.push({
           timeOfDay: timeName,
           avgDelayMinutes: Math.round(avgDelay),
-          currentScheduledTime: `${currentTargetHour}:00`,
-          suggestedTime: `${newHour}:00`,
+          currentScheduledTime: `${pad(current.hour)}:${pad(current.minute)}`,
+          suggestedTime: `${pad(Math.floor(totalMinutes / 60))}:${pad(totalMinutes % 60)}`,
           reason: `Patient consistently acknowledges their ${timeName} reminder about ${Math.round(avgDelay)} minutes later.`
         });
       }
@@ -388,11 +415,14 @@ const escalateReminder = async (reminderId, io) => {
   const now = new Date();
   const baseTime = reminder.scheduledTime || reminder.createdAt;
   const diffMinutes = Math.round((now.getTime() - baseTime.getTime()) / (1000 * 60));
+  const config = await SystemConfig.getConfig();
+  const level2After = config?.escalation?.level2Minutes ?? 15;
+  const level3After = config?.escalation?.level3Minutes ?? 30;
 
   let currentLevel = 1;
-  if (diffMinutes >= 30) {
+  if (diffMinutes >= level3After) {
     currentLevel = 3;
-  } else if (diffMinutes >= 15) {
+  } else if (diffMinutes >= level2After) {
     currentLevel = 2;
   }
 
@@ -511,6 +541,8 @@ const getMissedReminders = async (userId) => {
 };
 
 module.exports = {
+  resolveSlotTimes,
+  TIME_MAPPING,
   generateReminders,
   getUpcomingReminders,
   acknowledgeReminder,
