@@ -21,8 +21,8 @@ router.get("/overview", roleMiddleware.authorize("caregiver"), caregiverDashboar
 router.get("/alerts", roleMiddleware.authorize("caregiver"), caregiverDashboardController.getAlerts);
 
 // Patients sub-routes
-router.get("/patients/:id/timeline", roleMiddleware.authorize("caregiver", "doctor"), caregiverDashboardController.getPatientTimeline);
-router.get("/patients/:id/adherence", roleMiddleware.authorize("caregiver", "doctor"), caregiverDashboardController.getPatientAdherence);
+router.get("/patients/:id/timeline", roleMiddleware.authorize("caregiver", "doctor", "admin"), caregiverDashboardController.getPatientTimeline);
+router.get("/patients/:id/adherence", roleMiddleware.authorize("caregiver", "doctor", "admin"), caregiverDashboardController.getPatientAdherence);
 
 // Notes (Caregivers)
 router.post("/notes", roleMiddleware.authorize("caregiver"), caregiverDashboardController.addCaregiverNote);
@@ -32,15 +32,15 @@ router.delete("/notes/:id", roleMiddleware.authorize("caregiver"), caregiverDash
 
 // Cognitive assessments (Caregivers/Doctors)
 router.post("/cognitive-assessment", roleMiddleware.authorize("caregiver", "doctor"), caregiverDashboardController.logCognitiveAssessment);
-router.get("/cognitive-assessments/:patientId", roleMiddleware.authorize("caregiver", "doctor"), caregiverDashboardController.getCognitiveAssessments);
+router.get("/cognitive-assessments/:patientId", roleMiddleware.authorize("caregiver", "doctor", "admin", "patient"), caregiverDashboardController.getCognitiveAssessments);
 
 // Behavioral observations (Caregivers)
 router.post("/behavioral-observation", roleMiddleware.authorize("caregiver"), caregiverDashboardController.logBehavioralObservation);
-router.get("/behavioral-observations/:patientId", roleMiddleware.authorize("caregiver", "doctor"), caregiverDashboardController.getBehavioralObservations);
+router.get("/behavioral-observations/:patientId", roleMiddleware.authorize("caregiver", "doctor", "admin"), caregiverDashboardController.getBehavioralObservations);
 
 // Mood tracking (Caregivers / Patients)
 router.post("/mood", roleMiddleware.authorize("caregiver", "patient"), caregiverDashboardController.logMood);
-router.get("/mood/:patientId", roleMiddleware.authorize("caregiver", "doctor", "patient"), caregiverDashboardController.getMoodHistory);
+router.get("/mood/:patientId", roleMiddleware.authorize("caregiver", "doctor", "patient", "admin"), caregiverDashboardController.getMoodHistory);
 
 // Emergency contacts (Caregivers / Patients)
 router.post("/emergency-contacts", roleMiddleware.authorize("caregiver", "patient"), caregiverDashboardController.addEmergencyContact);

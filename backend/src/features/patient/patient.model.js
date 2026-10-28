@@ -7,6 +7,26 @@
 
 const mongoose = require("mongoose");
 
+const conditionSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: [true, "Condition name is required"], trim: true, maxlength: 120 },
+    status: { type: String, enum: ["active", "managed", "resolved"], default: "active" },
+    severity: { type: String, enum: ["mild", "moderate", "severe"], default: "mild" },
+    diagnosedOn: { type: Date, default: null },
+    notes: { type: String, trim: true, default: "" },
+    updates: [
+      {
+        at: { type: Date, default: Date.now },
+        status: { type: String, enum: ["active", "managed", "resolved"] },
+        severity: { type: String, enum: ["mild", "moderate", "severe"] },
+        note: { type: String, trim: true, default: "" },
+        byUserId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+      },
+    ],
+  },
+  { timestamps: true }
+);
+
 const patientSchema = new mongoose.Schema(
   {
     // Link to the User Auth Model
@@ -61,6 +81,9 @@ const patientSchema = new mongoose.Schema(
       },
     },
 
+    // ── Health condition tracking ─────────────
+    conditions: { type: [conditionSchema], default: [] },
+
     // ── Emergency Contact ─────────────────────
     emergencyContact: {
       name: { type: String, default: "" },
@@ -68,7 +91,7 @@ const patientSchema = new mongoose.Schema(
       phone: { type: String, default: "" },
     },
 
-    // ── Caregiver Link (For Future Module) ────
+    // ── Caregiver Link ────────────────────────
     assignedCaregivers: [
       {
         type: mongoose.Schema.Types.ObjectId,

@@ -12,6 +12,10 @@
  * → Schema          : defines the structure (fields, types, rules)
  * → pre('save') hook: runs code BEFORE saving — used to hash passwords
  * → methods         : custom functions on each user document
+ *
+ * Session handling: `tokenVersion` is embedded in every JWT. Changing the
+ * password, resetting it, or "signing out everywhere" bumps the version so
+ * older tokens stop working even though JWTs are stateless.
  */
 
 const mongoose = require("mongoose");
@@ -90,6 +94,10 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
+    // Doctors: speciality / licence shown to patients choosing a doctor
+    speciality: { type: String, trim: true, default: "" },
+    licenseNumber: { type: String, trim: true, default: "" },
+
     // ── Account Status ─────────────────────────────────────────────────
     isActive: {
       type: Boolean,
@@ -98,15 +106,28 @@ const userSchema = new mongoose.Schema(
 
     isEmailVerified: {
       type: Boolean,
-      default: false,  // Email verification (for future module)
+      default: false,
     },
 
-    // ── Password Reset (for future account recovery module) ────────────
-    passwordResetToken: String,
-    passwordResetExpires: Date,
+    // ── Account recovery ───────────────────────────────────────────────
+    recoveryEmail: { type: String, lowercase: true, trim: true, default: "" },
+    passwordResetToken: { type: String, select: false },   // sha256 of the OTP
+    passwordResetExpires: { type: Date, select: false },
+    passwordResetAttempts: { type: Number, default: 0, select: false },
+    passwordChangedAt: { type: Date, default: null },
 
-    // ── Relationships (for future modules) ────────────────────────────
-    // Patients can be linked to caregivers and doctors
+    // ── Session & brute-force protection ───────────────────────────────
+    tokenVersion: { type: Number, default: 0 },
+    failedLoginAttempts: { type: Number, default: 0, select: false },
+    lockUntil: { type: Date, default: null, select: false },
+    lastLoginAt: { type: Date, default: null },
+
+    // ── Privacy ────────────────────────────────────────────────────────
+    privacyConsentAt: { type: Date, default: null },
+    deletedAt: { type: Date, default: null },
+
+    // ── Relationships ──────────────────────────────────────────────────
+    // Patients can be linked to a primary doctor (see DoctorPatientLink)
     assignedDoctor: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",   // References another User document
@@ -125,20 +146,6 @@ const userSchema = new mongoose.Schema(
 );
 
 // ── PRE-SAVE MIDDLEWARE (Password Hashing) ──────────────────────────────
-/**
- * WHAT IS A PRE-SAVE HOOK?
- * → This function runs automatically BEFORE every .save() call.
- * → We use it to hash the password so we NEVER store plain text.
- *
- * WHY bcrypt?
- * → bcrypt is a one-way hashing algorithm designed for passwords.
- * → Even if your database is stolen, attackers can't reverse the hash.
- * → The "salt rounds" (10) controls how slow/secure the hash is.
- *
- * WHY check isModified('password')?
- * → We only re-hash if the password CHANGED.
- * → If a user updates their name, we don't want to re-hash the existing hash!
- */
 userSchema.pre("save", async function (next) {
   // "this" refers to the current user document being saved
   if (!this.isModified("password")) {
@@ -151,6 +158,7 @@ userSchema.pre("save", async function (next) {
 
   // Hash the plain-text password with the salt
   this.password = await bcrypt.hash(this.password, salt);
+  if (!this.isNew) this.passwordChangedAt = new Date();
 
   next(); // Continue to save the document
 });
@@ -159,17 +167,15 @@ userSchema.pre("save", async function (next) {
 
 /**
  * comparePassword — verifies a plain text password against the stored hash
- *
- * HOW IT WORKS:
- * → bcrypt.compare() hashes the entered password the same way
- *   and checks if the result matches the stored hash.
- * → Returns true if they match, false otherwise.
- *
- * USAGE: const isMatch = await user.comparePassword("entered_password");
  */
 userSchema.methods.comparePassword = async function (enteredPassword) {
   // bcrypt.compare handles the salt/hash comparison internally
   return await bcrypt.compare(enteredPassword, this.password);
+};
+
+/** True while the account is temporarily locked after too many failed logins. */
+userSchema.methods.isLocked = function () {
+  return Boolean(this.lockUntil && this.lockUntil > new Date());
 };
 
 /**
@@ -188,8 +194,15 @@ userSchema.methods.getPublicProfile = function () {
     dateOfBirth: this.dateOfBirth,
     gender: this.gender,
     avatar: this.avatar,
+    speciality: this.speciality,
+    licenseNumber: this.licenseNumber,
     isActive: this.isActive,
     isEmailVerified: this.isEmailVerified,
+    recoveryEmail: this.recoveryEmail,
+    privacyConsentAt: this.privacyConsentAt,
+    lastLoginAt: this.lastLoginAt,
+    passwordChangedAt: this.passwordChangedAt,
+    assignedDoctor: this.assignedDoctor,
     createdAt: this.createdAt,
   };
 };

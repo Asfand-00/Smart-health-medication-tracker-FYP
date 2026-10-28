@@ -10,6 +10,7 @@ import { View } from 'react-native';
 import { ApiError, errorMessage } from '../../api/client';
 import { qk } from '../../api/queryClient';
 import { patientApi } from '../../api/services';
+import { ConditionsCard } from '../../components/ConditionsCard';
 import { AppText } from '../../components/ui/AppText';
 import { Button } from '../../components/ui/Button';
 import { Card, SectionHeader } from '../../components/ui/Card';
@@ -161,6 +162,13 @@ export default function MedicalProfileScreen() {
         <TextField label="Allergies" value={form.allergies} onChangeText={set('allergies')} editable={!disabled} placeholder="Penicillin, Peanuts…" />
         <TextField label="Past surgeries" value={form.pastSurgeries} onChangeText={set('pastSurgeries')} editable={!disabled} placeholder="Appendectomy (2018)" />
       </Card>
+
+      {!notFound && (
+        <>
+          <SectionHeader title="Condition tracking" icon="fitness-outline" />
+          <ConditionsCard />
+        </>
+      )}
 
       <SectionHeader title="Emergency contact" icon="alert-circle-outline" />
       <Card>

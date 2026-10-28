@@ -1,8 +1,15 @@
 # MedTracker Mobile — Setup Guide
 
 React Native (Expo SDK 57, TypeScript) version of the Smart Medication Health Tracker.
-It talks to the **existing** Express + MongoDB backend in `../backend` — no backend
-changes were made or are required.
+It talks to the Express + MongoDB backend in `../backend` (see `../backend/README.md`),
+which implements all twelve modules of the project specification. The feature inventory
+and test status are in `MOBILE_FEATURES.md`.
+
+> **Native modules added:** `expo-notifications`, `expo-device`, `expo-image-picker`,
+> `expo-document-picker`. All are bundled in Expo Go, so the app still runs in Expo Go.
+> Remote (server-sent) push notifications need a development build
+> (`npx eas-cli@latest build --profile development`) and an EAS `projectId`; in Expo Go the
+> app falls back to local reminder notifications scheduled on the device.
 
 ---
 

@@ -1,44 +1,36 @@
 /**
  * AUTH ROUTES — auth.routes.js
  * ==============================
- * Defines the URL endpoints for authentication.
- * Each route maps an HTTP method + URL to a controller function.
- *
- * ROUTES:
- * POST /api/auth/register → register a new user
- * POST /api/auth/login    → login and get token
- * GET  /api/auth/me       → get current user (protected)
+ * POST /api/auth/register         → create an account
+ * POST /api/auth/login            → sign in (rate limited, lockout after failures)
+ * GET  /api/auth/me               → current user (protected)
+ * PUT  /api/auth/change-password  → change password, signs out other devices (protected)
+ * POST /api/auth/forgot-password  → email a 6-digit recovery code
+ * POST /api/auth/reset-password   → set a new password with the code
+ * POST /api/auth/logout           → audit sign-out; { everywhere: true } revokes all sessions
  */
 
 const express = require("express");
 const router = express.Router();
 
-// Import controller functions
-const { register, login, getMe } = require("./auth.controller");
-
-// Import validation rules
-const { registerValidation, loginValidation } = require("./auth.validation");
-
-// Import auth middleware (for protected route)
+const { register, login, getMe, changePassword, forgotPassword, resetPassword, logout } = require("./auth.controller");
+const {
+  registerValidation,
+  loginValidation,
+  changePasswordValidation,
+  forgotPasswordValidation,
+  resetPasswordValidation,
+} = require("./auth.validation");
 const { protect } = require("../../middleware/authMiddleware");
+const { authLimiter, recoveryLimiter } = require("../../middleware/security");
 
-/**
- * Route: POST /api/auth/register
- * Middleware chain: [validate inputs] → [register controller]
- */
-router.post("/register", registerValidation, register);
+router.post("/register", authLimiter, registerValidation, register);
+router.post("/login", authLimiter, loginValidation, login);
+router.post("/forgot-password", recoveryLimiter, forgotPasswordValidation, forgotPassword);
+router.post("/reset-password", recoveryLimiter, resetPasswordValidation, resetPassword);
 
-/**
- * Route: POST /api/auth/login
- * Middleware chain: [validate inputs] → [login controller]
- */
-router.post("/login", loginValidation, login);
-
-/**
- * Route: GET /api/auth/me
- * Protected — requires valid JWT token in Authorization header
- * Middleware chain: [verify token] → [getMe controller]
- */
 router.get("/me", protect, getMe);
+router.put("/change-password", protect, changePasswordValidation, changePassword);
+router.post("/logout", protect, logout);
 
 module.exports = router;

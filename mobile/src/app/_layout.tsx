@@ -1,11 +1,11 @@
 /**
  * Root layout — providers + auth/role-guarded navigation.
  *
- * Web equivalent: main.jsx (providers) + AppRoutes.jsx + ProtectedRoute.jsx.
- * ProtectedRoute's "not logged in → /login" and "wrong role → own dashboard"
- * rules become Stack.Protected guards: a screen whose guard is false cannot be
- * reached, and when a guard flips (login/logout) the router falls back to the
- * `index` route, which redirects to the right home screen.
+ * Role areas are route groups with their own tab bar:
+ *   (patient) (caregiver) (doctor) (admin)
+ * Shared screens (prescriptions, AI insights, analytics, calendar, …) live at
+ * the root and are available to every signed-in role; each checks access
+ * through the backend, which rejects anyone not linked to the patient.
  */
 import { QueryClientProvider } from '@tanstack/react-query';
 import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
@@ -21,6 +21,7 @@ import { AccessibilityProvider, useTheme } from '../context/AccessibilityContext
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { SocketProvider } from '../context/SocketContext';
 import { ToastProvider } from '../context/ToastContext';
+import { PushNotificationsBridge } from '../hooks/usePushNotifications';
 
 export default function RootLayout() {
   return (
@@ -30,6 +31,7 @@ export default function RootLayout() {
           <ToastProvider>
             <AuthProvider>
               <SocketProvider>
+                <PushNotificationsBridge />
                 <RootNavigator />
               </SocketProvider>
             </AuthProvider>
@@ -63,7 +65,6 @@ function RootNavigator() {
   );
 
   if (isLoading) {
-    // web: ProtectedRoute spinner while the saved session is being verified
     return (
       <View style={[styles.fill, { backgroundColor: colors.bg }]}>
         <StatusBar style="light" />
@@ -91,6 +92,7 @@ function RootNavigator() {
           <Stack.Protected guard={!isAuthenticated}>
             <Stack.Screen name="login" options={{ headerShown: false }} />
             <Stack.Screen name="register" options={{ title: 'Create Account' }} />
+            <Stack.Screen name="forgot-password" options={{ title: 'Account recovery' }} />
           </Stack.Protected>
 
           <Stack.Protected guard={isAuthenticated}>
@@ -101,19 +103,32 @@ function RootNavigator() {
               <Stack.Screen name="(caregiver)" options={{ headerShown: false }} />
             </Stack.Protected>
             <Stack.Protected guard={role === 'doctor'}>
-              <Stack.Screen name="doctor" options={{ title: 'Doctor Dashboard' }} />
+              <Stack.Screen name="(doctor)" options={{ headerShown: false }} />
             </Stack.Protected>
             <Stack.Protected guard={role === 'admin'}>
-              <Stack.Screen name="admin" options={{ title: 'Admin Dashboard' }} />
+              <Stack.Screen name="(admin)" options={{ headerShown: false }} />
             </Stack.Protected>
             <Stack.Protected guard={role === 'patient' || role === 'caregiver'}>
               <Stack.Screen name="emergency-contacts" options={{ title: 'Emergency Contacts' }} />
               <Stack.Screen name="reports" options={{ title: 'Reports & Risk' }} />
             </Stack.Protected>
+            <Stack.Protected guard={role !== 'admin'}>
+              <Stack.Screen name="plan-requests" options={{ title: 'Medication plan approvals' }} />
+              <Stack.Screen name="templates" options={{ title: 'Treatment templates' }} />
+            </Stack.Protected>
             {/* Any signed-in role */}
             <Stack.Screen name="profile" options={{ title: 'My Profile' }} />
             <Stack.Screen name="settings" options={{ title: 'Settings' }} />
+            <Stack.Screen name="notification-settings" options={{ title: 'Notification settings' }} />
+            <Stack.Screen name="activity" options={{ title: 'Account activity' }} />
             <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
+            <Stack.Screen name="prescriptions" options={{ title: 'Prescriptions' }} />
+            <Stack.Screen name="prescription-upload" options={{ title: 'New prescription' }} />
+            <Stack.Screen name="prescription/[id]" options={{ title: 'Prescription' }} />
+            <Stack.Screen name="ai-insights" options={{ title: 'AI insights & predictions' }} />
+            <Stack.Screen name="analytics" options={{ title: 'Health analytics' }} />
+            <Stack.Screen name="calendar" options={{ title: 'Medication calendar' }} />
+            <Stack.Screen name="drug-info" options={{ title: 'Drug information' }} />
           </Stack.Protected>
         </Stack>
       </View>

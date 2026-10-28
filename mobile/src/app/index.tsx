@@ -3,12 +3,12 @@ import { Redirect } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import type { Role } from '../types/models';
 
-/** web: ROLE_DASHBOARDS in ProtectedRoute.jsx / ROLE_REDIRECT in LoginPage.jsx */
-const HOME_BY_ROLE: Record<Role, '/home' | '/patients' | '/doctor' | '/admin'> = {
+/** Home screen per role (first tab of each role group). */
+const HOME_BY_ROLE: Record<Role, '/home' | '/patients' | '/dashboard' | '/monitor'> = {
   patient: '/home',
   caregiver: '/patients',
-  doctor: '/doctor',
-  admin: '/admin',
+  doctor: '/dashboard',
+  admin: '/monitor',
 };
 
 export default function Index() {
